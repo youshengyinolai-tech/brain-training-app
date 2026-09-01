@@ -537,6 +537,26 @@ const ILLUSTRATED_DIFF_PUZZLES = [
       { x: 0.000, y: 0.075, w: 0.315, h: 0.310 }, // 窓の外
       { x: 0.000, y: 0.825, w: 0.190, h: 0.175 }, // 左下の鉢植え
     ],
+    variants: {
+      "ふつう": {
+        edited: "assets/spot-diff/bakery/normal.webp",
+        diffs: [
+          { x: 0.535, y: 0.035, w: 0.105, h: 0.155 }, { x: 0.894, y: 0.035, w: 0.092, h: 0.145 },
+          { x: 0.635, y: 0.825, w: 0.115, h: 0.175 }, { x: 0.475, y: 0.175, w: 0.105, h: 0.135 },
+          { x: 0.455, y: 0.270, w: 0.145, h: 0.285 }, { x: 0.455, y: 0.785, w: 0.135, h: 0.200 },
+          { x: 0.585, y: 0.300, w: 0.175, h: 0.250 },
+        ],
+      },
+      "むずかしい": {
+        edited: "assets/spot-diff/bakery/hard.webp",
+        diffs: [
+          { x: 0.115, y: 0.360, w: 0.305, h: 0.325 }, { x: 0.580, y: 0.300, w: 0.180, h: 0.255 },
+          { x: 0.635, y: 0.825, w: 0.115, h: 0.175 }, { x: 0.475, y: 0.175, w: 0.105, h: 0.135 },
+          { x: 0.455, y: 0.270, w: 0.145, h: 0.285 }, { x: 0.455, y: 0.785, w: 0.135, h: 0.200 },
+          { x: 0.750, y: 0.805, w: 0.235, h: 0.180 },
+        ],
+      },
+    },
   },
   {
     id: "park-001",
@@ -552,6 +572,26 @@ const ILLUSTRATED_DIFF_PUZZLES = [
       { x: 0.480, y: 0.015, w: 0.055, h: 0.125 }, // 街灯の上部
       { x: 0.485, y: 0.505, w: 0.100, h: 0.145 }, // 道の上を飛ぶ鳥
     ],
+    variants: {
+      "ふつう": {
+        edited: "assets/spot-diff/park/normal.webp",
+        diffs: [
+          { x: 0.170, y: 0.430, w: 0.150, h: 0.165 }, { x: 0.075, y: 0.535, w: 0.220, h: 0.175 },
+          { x: 0.390, y: 0.665, w: 0.120, h: 0.205 }, { x: 0.745, y: 0.510, w: 0.175, h: 0.215 },
+          { x: 0.645, y: 0.815, w: 0.195, h: 0.185 }, { x: 0.480, y: 0.010, w: 0.060, h: 0.135 },
+          { x: 0.765, y: 0.120, w: 0.130, h: 0.150 },
+        ],
+      },
+      "むずかしい": {
+        edited: "assets/spot-diff/park/hard.webp",
+        diffs: [
+          { x: 0.175, y: 0.350, w: 0.125, h: 0.165 }, { x: 0.300, y: 0.425, w: 0.105, h: 0.185 },
+          { x: 0.390, y: 0.665, w: 0.120, h: 0.205 }, { x: 0.610, y: 0.125, w: 0.105, h: 0.115 },
+          { x: 0.745, y: 0.510, w: 0.175, h: 0.215 }, { x: 0.075, y: 0.535, w: 0.220, h: 0.175 },
+          { x: 0.645, y: 0.815, w: 0.195, h: 0.185 },
+        ],
+      },
+    },
   },
   {
     id: "kitchen-001",
@@ -567,11 +607,101 @@ const ILLUSTRATED_DIFF_PUZZLES = [
       { x: 0.515, y: 0.270, w: 0.070, h: 0.085 }, // 魚のマグネット
       { x: 0.140, y: 0.225, w: 0.090, h: 0.175 }, // 窓横の鍋つかみ
     ],
+    variants: {
+      "ふつう": {
+        edited: "assets/spot-diff/kitchen/normal.webp",
+        diffs: [
+          { x: 0.815, y: 0.020, w: 0.120, h: 0.160 }, { x: 0.365, y: 0.390, w: 0.125, h: 0.170 },
+          { x: 0.505, y: 0.220, w: 0.085, h: 0.100 }, { x: 0.315, y: 0.410, w: 0.095, h: 0.105 },
+          { x: 0.095, y: 0.195, w: 0.135, h: 0.205 }, { x: 0.875, y: 0.805, w: 0.125, h: 0.195 },
+          { x: 0.425, y: 0.645, w: 0.130, h: 0.195 },
+        ],
+      },
+      "むずかしい": {
+        edited: "assets/spot-diff/kitchen/hard.webp",
+        diffs: [
+          { x: 0.160, y: 0.380, w: 0.195, h: 0.310 }, { x: 0.575, y: 0.285, w: 0.205, h: 0.355 },
+          { x: 0.135, y: 0.215, w: 0.100, h: 0.175 }, { x: 0.365, y: 0.390, w: 0.125, h: 0.170 },
+          { x: 0.760, y: 0.675, w: 0.115, h: 0.145 }, { x: 0.710, y: 0.805, w: 0.290, h: 0.190 },
+          { x: 0.425, y: 0.645, w: 0.130, h: 0.195 },
+        ],
+      },
+    },
   },
 ];
 
+const ILLUSTRATED_VARIANTS = {
+  "bakery-001": {
+    "ふつう": {
+      image: "assets/spot-diff/bakery/normal.webp",
+      diffs: [
+        { x: 0.535, y: 0.035, w: 0.105, h: 0.155 }, { x: 0.895, y: 0.035, w: 0.095, h: 0.145 },
+        { x: 0.635, y: 0.825, w: 0.120, h: 0.175 }, { x: 0.475, y: 0.175, w: 0.105, h: 0.135 },
+        { x: 0.455, y: 0.285, w: 0.115, h: 0.270 }, { x: 0.455, y: 0.770, w: 0.135, h: 0.230 },
+        { x: 0.595, y: 0.300, w: 0.170, h: 0.240 },
+      ],
+    },
+    "むずかしい": {
+      image: "assets/spot-diff/bakery/hard.webp",
+      diffs: [
+        { x: 0.120, y: 0.350, w: 0.280, h: 0.350 }, { x: 0.595, y: 0.300, w: 0.170, h: 0.250 },
+        { x: 0.635, y: 0.825, w: 0.120, h: 0.175 }, { x: 0.475, y: 0.175, w: 0.105, h: 0.135 },
+        { x: 0.455, y: 0.285, w: 0.110, h: 0.270 }, { x: 0.455, y: 0.770, w: 0.135, h: 0.230 },
+        { x: 0.775, y: 0.820, w: 0.220, h: 0.180 },
+      ],
+    },
+  },
+  "park-001": {
+    "ふつう": {
+      image: "assets/spot-diff/park/normal.webp",
+      diffs: [
+        { x: 0.180, y: 0.435, w: 0.150, h: 0.175 }, { x: 0.075, y: 0.545, w: 0.220, h: 0.190 },
+        { x: 0.390, y: 0.655, w: 0.110, h: 0.210 }, { x: 0.750, y: 0.490, w: 0.160, h: 0.180 },
+        { x: 0.630, y: 0.815, w: 0.180, h: 0.185 }, { x: 0.480, y: 0.010, w: 0.060, h: 0.135 },
+        { x: 0.765, y: 0.120, w: 0.130, h: 0.150 },
+      ],
+    },
+    "むずかしい": {
+      image: "assets/spot-diff/park/hard.webp",
+      diffs: [
+        { x: 0.165, y: 0.350, w: 0.155, h: 0.170 }, { x: 0.305, y: 0.440, w: 0.145, h: 0.180 },
+        { x: 0.390, y: 0.655, w: 0.110, h: 0.210 }, { x: 0.605, y: 0.120, w: 0.100, h: 0.110 },
+        { x: 0.750, y: 0.490, w: 0.160, h: 0.180 }, { x: 0.075, y: 0.545, w: 0.220, h: 0.190 },
+        { x: 0.630, y: 0.815, w: 0.180, h: 0.185 },
+      ],
+    },
+  },
+  "kitchen-001": {
+    "ふつう": {
+      image: "assets/spot-diff/kitchen/normal.webp",
+      diffs: [
+        { x: 0.815, y: 0.020, w: 0.120, h: 0.160 }, { x: 0.390, y: 0.390, w: 0.105, h: 0.155 },
+        { x: 0.515, y: 0.205, w: 0.075, h: 0.100 }, { x: 0.315, y: 0.405, w: 0.110, h: 0.115 },
+        { x: 0.095, y: 0.220, w: 0.110, h: 0.175 }, { x: 0.875, y: 0.795, w: 0.120, h: 0.200 },
+        { x: 0.425, y: 0.635, w: 0.115, h: 0.190 },
+      ],
+    },
+    "むずかしい": {
+      image: "assets/spot-diff/kitchen/hard.webp",
+      diffs: [
+        { x: 0.155, y: 0.365, w: 0.205, h: 0.320 }, { x: 0.575, y: 0.285, w: 0.220, h: 0.380 },
+        { x: 0.140, y: 0.225, w: 0.090, h: 0.165 }, { x: 0.815, y: 0.300, w: 0.095, h: 0.125 },
+        { x: 0.755, y: 0.680, w: 0.100, h: 0.110 }, { x: 0.705, y: 0.790, w: 0.285, h: 0.200 },
+        { x: 0.425, y: 0.635, w: 0.115, h: 0.190 },
+      ],
+    },
+  },
+};
+
+ILLUSTRATED_DIFF_PUZZLES.forEach((puzzle) => {
+  puzzle.variants = {
+    "やさしい": { image: puzzle.edited, diffs: puzzle.diffs },
+    ...ILLUSTRATED_VARIANTS[puzzle.id],
+  };
+});
+
 function difficultyDiffCount(difficulty) {
-  return DIFF_DIFFICULTY[difficulty]?.k ?? 5;
+  return 7;
 }
 
 function preloadUrls(urls) {
@@ -601,8 +731,8 @@ function upcomingIllustratedPuzzles(selected, count = 2) {
     ILLUSTRATED_DIFF_PUZZLES[(start + i + 1) % ILLUSTRATED_DIFF_PUZZLES.length]);
 }
 
-function drawIllustratedDiffPanel(svg, puzzle, ox, oy, w, h, variant, showAnswer, count) {
-  const clipIdPrefix = `${puzzle.id}-${variant}-${Math.random().toString(36).slice(2)}`;
+function drawIllustratedDiffPanel(svg, puzzle, variantData, ox, oy, w, h, side, showAnswer) {
+  const clipIdPrefix = `${puzzle.id}-${side}-${Math.random().toString(36).slice(2)}`;
   const defs = svgEl("defs");
   svg.appendChild(defs);
   svg.appendChild(svgEl("rect", { x: ox, y: oy, width: w, height: h, rx: 2.5, fill: "#fff", stroke: "#222", "stroke-width": 0.7 }));
@@ -611,8 +741,8 @@ function drawIllustratedDiffPanel(svg, puzzle, ox, oy, w, h, variant, showAnswer
     preserveAspectRatio: "none",
   }));
 
-  if (variant === "B") {
-    puzzle.diffs.slice(0, count).forEach((diff, index) => {
+  if (side === "B") {
+    variantData.diffs.forEach((diff, index) => {
       const clipId = `${clipIdPrefix}-${index}`;
       const clip = svgEl("clipPath", { id: clipId });
       clip.appendChild(svgEl("rect", {
@@ -621,7 +751,7 @@ function drawIllustratedDiffPanel(svg, puzzle, ox, oy, w, h, variant, showAnswer
       }));
       defs.appendChild(clip);
       svg.appendChild(svgEl("image", {
-        href: puzzle.edited, x: ox, y: oy, width: w, height: h,
+        href: variantData.image, x: ox, y: oy, width: w, height: h,
         preserveAspectRatio: "none", "clip-path": `url(#${clipId})`,
       }));
       if (showAnswer) {
@@ -739,15 +869,16 @@ function renderDiffSheets(printArea, difficulty, rng, includeAnswer, illustrated
 
 function renderIllustratedDiffSheets(printArea, difficulty, puzzle, includeAnswer) {
   const count = difficultyDiffCount(difficulty);
+  const variantData = puzzle.variants[difficulty] ?? puzzle.variants["ふつう"];
   const subtitle = `上と下の絵を見くらべて、${count}このちがいをさがしてね`;
   const s1 = buildSheet({ title: `まちがいさがし「${puzzle.title}」`, subtitle, showNameDate: true, answerPage: false });
   const panelH = (s1.contentH - 28) / 2;
   const svg1 = makeSvg(s1.contentW, s1.contentH);
   addPanelLabel(svg1, 0, 6, "うえの絵");
-  drawIllustratedDiffPanel(svg1, puzzle, 0, 8, s1.contentW, panelH, "A", false, count);
+  drawIllustratedDiffPanel(svg1, puzzle, variantData, 0, 8, s1.contentW, panelH, "A", false);
   const y2 = 8 + panelH + 10;
   addPanelLabel(svg1, 0, y2 - 2, "したの絵");
-  drawIllustratedDiffPanel(svg1, puzzle, 0, y2, s1.contentW, panelH, "B", false, count);
+  drawIllustratedDiffPanel(svg1, puzzle, variantData, 0, y2, s1.contentW, panelH, "B", false);
   svg1.appendChild(svgText(s1.contentW / 2, y2 + panelH + 8, `ちがいは ぜんぶで ${count}こ あります`, { "font-size": 4.2, "text-anchor": "middle" }));
   s1.holder.appendChild(svg1);
   printArea.appendChild(s1.sheet);
@@ -757,10 +888,10 @@ function renderIllustratedDiffSheets(printArea, difficulty, puzzle, includeAnswe
     const panelH2 = (s2.contentH - 20) / 2;
     const svg2 = makeSvg(s2.contentW, s2.contentH);
     addPanelLabel(svg2, 0, 6, "うえの絵");
-    drawIllustratedDiffPanel(svg2, puzzle, 0, 8, s2.contentW, panelH2, "A", false, count);
+    drawIllustratedDiffPanel(svg2, puzzle, variantData, 0, 8, s2.contentW, panelH2, "A", false);
     const y2b = 8 + panelH2 + 10;
     addPanelLabel(svg2, 0, y2b - 2, "したの絵（こたえ）");
-    drawIllustratedDiffPanel(svg2, puzzle, 0, y2b, s2.contentW, panelH2, "B", true, count);
+    drawIllustratedDiffPanel(svg2, puzzle, variantData, 0, y2b, s2.contentW, panelH2, "B", true);
     s2.holder.appendChild(svg2);
     printArea.appendChild(s2.sheet);
   }
@@ -806,9 +937,13 @@ async function generateAndPrint(kind) {
     let illustrated = null;
     if (kind === "all" || kind === "diff") {
       illustrated = takeNextIllustratedPuzzle();
-      await preloadUrls([illustrated.base, illustrated.edited]);
+      const selectedVariant = illustrated.variants[currentDifficulty] ?? illustrated.variants["ふつう"];
+      await preloadUrls([illustrated.base, selectedVariant.image]);
       const upcoming = upcomingIllustratedPuzzles(illustrated);
-      setTimeout(() => preloadUrls(upcoming.flatMap((p) => [p.base, p.edited])).catch(console.warn), 0);
+      setTimeout(() => preloadUrls(upcoming.flatMap((p) => {
+        const nextVariant = p.variants[currentDifficulty] ?? p.variants["ふつう"];
+        return [p.base, nextVariant.image];
+      })).catch(console.warn), 0);
     }
     if (kind === "all" || kind === "maze") renderMazeSheets(printArea, currentDifficulty, rng, includeAnswer);
     if (kind === "all" || kind === "odd") renderOddSheets(printArea, currentDifficulty, rng, includeAnswer);
