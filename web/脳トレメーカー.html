@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>脳トレメーカー</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Yu Gothic UI", "Meiryo UI", "Meiryo", "Hiragino Sans", sans-serif;
+    background: #f4f5f7;
+    color: #222;
+  }
+
+  /* ---------- 操作画面 ---------- */
+  .app { max-width: 900px; margin: 0 auto; padding: 28px 30px 40px; }
+  .app h1 { font-size: 34px; margin: 0 0 6px; }
+  .app .lead { color: #555; font-size: 15px; margin: 0 0 22px; }
+  .section-title { font-size: 17px; font-weight: bold; margin: 22px 0 8px; }
+
+  .diff-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .diff-btn {
+    font-size: 19px; font-weight: bold; padding: 12px 26px;
+    border: 2px solid #bbb; border-radius: 8px; background: #fff; cursor: pointer;
+  }
+  .diff-btn.active { background: #cfe3ff; border-color: #2f6fed; }
+
+  .answer-row { margin-top: 14px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .answer-row input { width: 20px; height: 20px; }
+
+  .main-btn {
+    display: block; width: 100%; margin-top: 10px;
+    font-size: 23px; font-weight: bold; color: #fff; background: #2f6fed;
+    border: none; border-radius: 10px; padding: 22px; cursor: pointer;
+  }
+  .main-btn:hover { background: #255bc4; }
+
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .kind-btn {
+    font-size: 18px; font-weight: bold; color: #fff; border: none; border-radius: 10px;
+    padding: 18px 8px; cursor: pointer;
+  }
+  .kind-btn.maze { background: #2ca058; }
+  .kind-btn.odd { background: #e08a1e; }
+  .kind-btn.diff { background: #c14f4f; }
+  .kind-btn:hover { filter: brightness(0.92); }
+
+  .status-box {
+    margin-top: 26px; background: #eef1f5; border: 1px solid #d7dbe1; border-radius: 6px;
+    padding: 14px 16px; font-size: 14px; white-space: pre-line; min-height: 20px;
+  }
+
+  .footer-row { margin-top: 18px; font-size: 13px; color: #777; display: flex; align-items: center; gap: 14px; }
+  .footer-row button {
+    font-size: 13px; padding: 7px 12px; background: #dde2ea; border: none; border-radius: 6px; cursor: pointer;
+  }
+
+  @media print {
+    .app { display: none; }
+  }
+
+  /* ---------- 印刷用シート ---------- */
+  #printArea { display: none; }
+  @media print {
+    #printArea { display: block; }
+  }
+
+  .sheet {
+    width: 210mm;
+    height: 297mm;
+    padding: 15mm;
+    position: relative;
+    background: #fff;
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .sheet:last-child { page-break-after: auto; }
+
+  .sheet .title {
+    font-size: 22pt; font-weight: bold; margin: 0;
+  }
+  .sheet .subtitle {
+    font-size: 12pt; color: #333; margin: 3mm 0 0;
+  }
+  .sheet .namedate {
+    position: absolute; top: 15mm; right: 15mm; text-align: right; font-size: 11pt; line-height: 1.9;
+  }
+  .sheet .footer {
+    position: absolute; left: 15mm; right: 15mm; bottom: 12mm;
+    display: flex; justify-content: space-between; font-size: 8pt; color: #999;
+  }
+  .sheet svg { display: block; }
+
+  @page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <h1>脳トレメーカー</h1>
+  <p class="lead">ボタンをおすたびに、あたらしい問題ができます。印刷してお使いください。</p>
+
+  <div class="section-title">むずかしさ</div>
+  <div class="diff-row" id="diffRow"></div>
+
+  <div class="answer-row">
+    <input type="checkbox" id="answerCheck" checked>
+    <label for="answerCheck">こたえのページも印刷する（職員用）</label>
+  </div>
+
+  <div class="section-title">今日の脳トレを作る</div>
+  <button class="main-btn" id="btnAll">全部まとめて1つ作る（めいろ＋なかまはずれ＋まちがいさがし）</button>
+
+  <div class="section-title">1種類だけ作る</div>
+  <div class="grid3">
+    <button class="kind-btn maze" id="btnMaze">めいろ</button>
+    <button class="kind-btn odd" id="btnOdd">なかまはずれさがし</button>
+    <button class="kind-btn diff" id="btnDiff">まちがいさがし</button>
+  </div>
+
+  <div class="status-box" id="status">ボタンをおすと、あたらしい教材ができます。</div>
+
+  <div class="footer-row">
+    <span>印刷プレビューが自動で開きます。開かない場合は Ctrl+P（Macは ⌘+P）を押してください。</span>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   0. 共通ユーティリティ（乱数・SVG）
+   ============================================================ */
+
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+class RNG {
+  constructor(seed) {
+    const s = (seed === undefined) ? ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0) : seed;
+    this._next = mulberry32(s);
+  }
+  random() { return this._next(); }
+  randint(a, b) { return a + Math.floor(this.random() * (b - a + 1)); }
+  choice(arr) { return arr[Math.floor(this.random() * arr.length)]; }
+  shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(this.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  sample(arr, k) { return this.shuffle(arr.slice()).slice(0, k); }
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs) {
+  const el = document.createElementNS(SVG_NS, tag);
+  if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+const JP_FONT_STACK = "'Yu Gothic UI','Meiryo UI',Meiryo,'Hiragino Sans',sans-serif";
+
+function makeSvg(w, h) {
+  return svgEl("svg", { width: w + "mm", height: h + "mm", viewBox: `0 0 ${w} ${h}`, style: "overflow: visible" });
+}
+function svgText(x, y, text, attrs) {
+  const t = svgEl("text", { x, y, "font-family": JP_FONT_STACK, fill: "#111", ...attrs });
+  t.textContent = text;
+  return t;
+}
+
+/* ============================================================
+   1. 図形の描画（まちがいさがし・なかまはずれさがし共通）
+   ============================================================ */
+
+const SHAPE_KINDS = ["circle", "square", "triangle", "star", "diamond"];
+const COLORS = {
+  red: "#dc3c37", blue: "#326ec8", green: "#3ca05a", orange: "#eb9628",
+  purple: "#965abe", yellow: "#ebc828", pink: "#e682aa", teal: "#28a0a0",
+};
+const COLOR_NAMES = Object.keys(COLORS);
+
+function darken(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, (n >> 16) - amt);
+  const g = Math.max(0, ((n >> 8) & 0xff) - amt);
+  const b = Math.max(0, (n & 0xff) - amt);
+  return `rgb(${r},${g},${b})`;
+}
+
+function regularPolygonPoints(cx, cy, r, sides, rotateDeg) {
+  const pts = [];
+  for (let i = 0; i < sides; i++) {
+    const a = (Math.PI * 2 * i) / sides + (rotateDeg * Math.PI) / 180;
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts;
+}
+function starPoints(cx, cy, rOuter, rInner, corners, rotateDeg) {
+  const pts = [];
+  for (let i = 0; i < corners * 2; i++) {
+    const r = i % 2 === 0 ? rOuter : rInner;
+    const a = (Math.PI * i) / corners + (rotateDeg * Math.PI) / 180;
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts;
+}
+function ptsAttr(pts) { return pts.map((p) => p[0].toFixed(2) + "," + p[1].toFixed(2)).join(" "); }
+
+function drawShape(svg, kind, cx, cy, size, color) {
+  const r = size / 2;
+  const stroke = darken(color, 60);
+  const common = { fill: color, stroke, "stroke-width": 0.35 };
+  let el;
+  if (kind === "circle") el = svgEl("circle", { cx, cy, r, ...common });
+  else if (kind === "square") el = svgEl("rect", { x: cx - r, y: cy - r, width: size, height: size, ...common });
+  else if (kind === "triangle") el = svgEl("polygon", { points: ptsAttr(regularPolygonPoints(cx, cy, r, 3, -90)), ...common });
+  else if (kind === "diamond") el = svgEl("polygon", { points: ptsAttr(regularPolygonPoints(cx, cy, r, 4, -90)), ...common });
+  else if (kind === "star") el = svgEl("polygon", { points: ptsAttr(starPoints(cx, cy, r * 0.95, r * 0.42, 5, -90)), ...common });
+  svg.appendChild(el);
+}
+function markCircle(svg, cx, cy, size) {
+  const r = size * 0.75;
+  svg.appendChild(svgEl("circle", { cx, cy, r, fill: "none", stroke: "#dc1e1e", "stroke-width": 1.1 }));
+}
+
+/* ============================================================
+   2. シート（用紙）を組み立てる共通ヘルパー
+   ============================================================ */
+
+const PAGE_W = 210, PAGE_H = 297, MARGIN = 15;
+
+function buildSheet({ title, subtitle, showNameDate, answerPage }) {
+  const sheet = document.createElement("div");
+  sheet.className = "sheet";
+
+  const h1 = document.createElement("p");
+  h1.className = "title";
+  h1.textContent = title + (answerPage ? "（こたえ）" : "");
+  sheet.appendChild(h1);
+
+  let topUsed = MARGIN + 14;
+  if (subtitle) {
+    const sub = document.createElement("p");
+    sub.className = "subtitle";
+    sub.textContent = subtitle;
+    sheet.appendChild(sub);
+    topUsed += 8;
+  }
+
+  if (showNameDate && !answerPage) {
+    const nd = document.createElement("div");
+    nd.className = "namedate";
+    nd.innerHTML = "日付：　　　月　　　日<br>名前：";
+    sheet.appendChild(nd);
+  }
+
+  const footer = document.createElement("div");
+  footer.className = "footer";
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  footer.innerHTML = `<span>脳トレメーカー</span><span>${dateStr}</span>`;
+  sheet.appendChild(footer);
+
+  const contentY = topUsed;
+  const contentH = PAGE_H - MARGIN - contentY - 10;
+  const contentW = PAGE_W - 2 * MARGIN;
+
+  const holder = document.createElement("div");
+  holder.style.marginTop = (contentY - MARGIN) + "mm";
+  sheet.appendChild(holder);
+
+  return { sheet, holder, contentW, contentH };
+}
+
+/* ============================================================
+   3. めいろ
+   ============================================================ */
+
+const MAZE_DIRS = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
+const MAZE_OPPOSITE = { N: "S", S: "N", E: "W", W: "E" };
+const MAZE_DIFFICULTY_ROWS = { "やさしい": 9, "ふつう": 13, "むずかしい": 17 };
+
+function generateMaze(difficulty, contentW, contentH, rng) {
+  const rowsBase = MAZE_DIFFICULTY_ROWS[difficulty] ?? 13;
+  const cols = Math.max(4, Math.round((rowsBase * contentW) / contentH));
+  const rows = rowsBase;
+
+  const walls = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({ N: true, S: true, E: true, W: true }))
+  );
+  const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+
+  const stack = [[0, 0]];
+  visited[0][0] = true;
+  while (stack.length) {
+    const [c, r] = stack[stack.length - 1];
+    const neighbors = [];
+    for (const d in MAZE_DIRS) {
+      const [dc, dr] = MAZE_DIRS[d];
+      const nc = c + dc, nr = r + dr;
+      if (nc >= 0 && nc < cols && nr >= 0 && nr < rows && !visited[nr][nc]) neighbors.push([d, nc, nr]);
+    }
+    if (!neighbors.length) { stack.pop(); continue; }
+    const [d, nc, nr] = rng.choice(neighbors);
+    walls[r][c][d] = false;
+    walls[nr][nc][MAZE_OPPOSITE[d]] = false;
+    visited[nr][nc] = true;
+    stack.push([nc, nr]);
+  }
+
+  const start = [0, 0], goal = [cols - 1, rows - 1];
+  const path = solveMaze(walls, cols, rows, start, goal);
+  return { rows, cols, walls, start, goal, path };
+}
+
+function solveMaze(walls, cols, rows, start, goal) {
+  const key = (c, r) => c + "," + r;
+  const cameFrom = new Map();
+  cameFrom.set(key(...start), null);
+  const q = [start];
+  while (q.length) {
+    const [c, r] = q.shift();
+    if (c === goal[0] && r === goal[1]) break;
+    for (const d in MAZE_DIRS) {
+      if (walls[r][c][d]) continue;
+      const [dc, dr] = MAZE_DIRS[d];
+      const nc = c + dc, nr = r + dr;
+      if (!cameFrom.has(key(nc, nr))) { cameFrom.set(key(nc, nr), [c, r]); q.push([nc, nr]); }
+    }
+  }
+  const path = [];
+  let cur = goal;
+  while (cur) { path.push(cur); cur = cameFrom.get(key(...cur)); }
+  path.reverse();
+  return path;
+}
+
+function drawMazeWalls(svg, maze, ox, oy, cell) {
+  const { rows, cols, walls, start, goal } = maze;
+  const [sx, sy] = start, [gx, gy] = goal;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const w = walls[r][c];
+      const x0 = ox + c * cell, y0 = oy + r * cell;
+      const x1 = x0 + cell, y1 = y0 + cell;
+      const line = (ax, ay, bx, by) =>
+        svg.appendChild(svgEl("line", { x1: ax, y1: ay, x2: bx, y2: by, stroke: "#141414", "stroke-width": 0.8, "stroke-linecap": "square" }));
+
+      if (r === 0 && w.N && !(c === sx && r === sy)) line(x0, y0, x1, y0);
+      else if (r > 0 && w.N) line(x0, y0, x1, y0);
+      if (w.W) line(x0, y0, x0, y1);
+      if (r === rows - 1 && w.S && !(c === gx && r === gy)) line(x0, y1, x1, y1);
+      if (c === cols - 1 && w.E) line(x1, y0, x1, y1);
+    }
+  }
+
+  const label = (cx, cy, text) =>
+    svg.appendChild(svgText(cx, cy, text, { "font-size": 5, "font-weight": "bold", "text-anchor": "middle" }));
+  label(ox + (sx + 0.5) * cell, oy + sy * cell - 2, "スタート");
+  label(ox + (gx + 0.5) * cell, oy + (gy + 1) * cell + 6, "ゴール");
+}
+
+function renderMazeSheets(printArea, difficulty, rng, includeAnswer) {
+  const s1 = buildSheet({ title: "めいろ", subtitle: "スタートからゴールまで、せんをひいてね", showNameDate: true, answerPage: false });
+  const maze = generateMaze(difficulty, s1.contentW, s1.contentH - 34, rng);
+  const cell = Math.min(s1.contentW / maze.cols, (s1.contentH - 34) / maze.rows);
+  const gridW = cell * maze.cols, gridH = cell * maze.rows;
+  const ox = (s1.contentW - gridW) / 2, oy = (s1.contentH - gridH) / 2;
+
+  const svg1 = makeSvg(s1.contentW, s1.contentH);
+  drawMazeWalls(svg1, maze, ox, oy, cell);
+  s1.holder.appendChild(svg1);
+  printArea.appendChild(s1.sheet);
+
+  if (includeAnswer) {
+    const s2 = buildSheet({ title: "めいろ", showNameDate: false, answerPage: true });
+    const cell2 = Math.min(s2.contentW / maze.cols, (s2.contentH - 34) / maze.rows);
+    const gridW2 = cell2 * maze.cols, gridH2 = cell2 * maze.rows;
+    const ox2 = (s2.contentW - gridW2) / 2, oy2 = (s2.contentH - gridH2) / 2;
+    const svg2 = makeSvg(s2.contentW, s2.contentH);
+    drawMazeWalls(svg2, maze, ox2, oy2, cell2);
+    const pts = maze.path.map(([c, r]) => [ox2 + (c + 0.5) * cell2, oy2 + (r + 0.5) * cell2]);
+    svg2.appendChild(svgEl("polyline", {
+      points: ptsAttr(pts), fill: "none", stroke: "#dc3c37", "stroke-width": 1.6,
+      "stroke-linecap": "round", "stroke-linejoin": "round",
+    }));
+    s2.holder.appendChild(svg2);
+    printArea.appendChild(s2.sheet);
+  }
+}
+
+/* ============================================================
+   4. なかまはずれさがし
+   ============================================================ */
+
+const ODD_DIFFICULTY = {
+  "やさしい": { rows: 2, cols: 3, mode: "color_far" },
+  "ふつう": { rows: 3, cols: 3, mode: "shape" },
+  "むずかしい": { rows: 3, cols: 4, mode: "color_near", sizeVariant: true },
+};
+const NEAR_COLOR_PAIRS = [["red", "pink"], ["blue", "teal"], ["purple", "pink"], ["orange", "yellow"], ["green", "teal"]];
+
+function makeOddPuzzle(settings, rng) {
+  const rows = settings.rows, cols = settings.cols;
+  const n = rows * cols;
+  let oddIndex = rng.randint(0, n - 1);
+  const baseKind = rng.choice(SHAPE_KINDS);
+  let baseColorName = rng.choice(COLOR_NAMES);
+  let baseColor = COLORS[baseColorName];
+  const baseSize = 14.0;
+
+  const items = Array.from({ length: n }, () => ({ kind: baseKind, color: baseColor, size: baseSize }));
+
+  const mode = settings.mode;
+  if (mode === "shape") {
+    const other = rng.choice(SHAPE_KINDS.filter((k) => k !== baseKind));
+    items[oddIndex].kind = other;
+  } else if (mode === "color_far") {
+    const otherName = rng.choice(COLOR_NAMES.filter((c) => c !== baseColorName));
+    items[oddIndex].color = COLORS[otherName];
+  } else if (mode === "color_near") {
+    const pair = rng.choice(NEAR_COLOR_PAIRS);
+    let otherName;
+    if (!pair.includes(baseColorName)) {
+      baseColorName = pair[0];
+      baseColor = COLORS[baseColorName];
+      for (const it of items) it.color = baseColor;
+      otherName = pair[1];
+    } else {
+      otherName = baseColorName === pair[0] ? pair[1] : pair[0];
+    }
+    items[oddIndex].color = COLORS[otherName];
+    if (settings.sizeVariant && rng.random() < 0.4) {
+      items[oddIndex].color = baseColor;
+      items[oddIndex].size = baseSize * rng.choice([0.72, 1.3]);
+    }
+  }
+
+  rng.shuffle(items);
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.kind !== baseKind || it.color !== baseColor || it.size !== baseSize) { oddIndex = i; break; }
+  }
+
+  return { rows, cols, items, oddIndex };
+}
+
+function generateOddPage(difficulty, rng) {
+  const settings = ODD_DIFFICULTY[difficulty] ?? ODD_DIFFICULTY["ふつう"];
+  return [0, 1, 2, 3].map(() => makeOddPuzzle(settings, rng));
+}
+
+function drawOddBox(svg, puzzle, bx, by, bw, bh, label, showAnswer) {
+  svg.appendChild(svgEl("rect", { x: bx, y: by, width: bw, height: bh, fill: "none", stroke: "#3c3c3c", "stroke-width": 0.6 }));
+  svg.appendChild(svgText(bx + 3, by + 8, label, { "font-size": 5.2, "font-weight": "bold" }));
+
+  const rows = puzzle.rows, cols = puzzle.cols;
+  const padTop = 12;
+  const gridW = bw - 10, gridH = bh - padTop - 6;
+  const cellW = gridW / cols, cellH = gridH / rows;
+  const shapeSize = Math.min(cellW, cellH) * 0.6;
+
+  puzzle.items.forEach((item, idx) => {
+    const r = Math.floor(idx / cols), c = idx % cols;
+    const cx = bx + 5 + cellW * (c + 0.5);
+    const cy = by + padTop + cellH * (r + 0.5);
+    drawShape(svg, item.kind, cx, cy, shapeSize, item.color);
+    if (showAnswer && idx === puzzle.oddIndex) markCircle(svg, cx, cy, shapeSize);
+  });
+}
+
+function renderOddSheets(printArea, difficulty, rng, includeAnswer) {
+  const puzzles = generateOddPage(difficulty, rng);
+  const labels = ["もんだい１", "もんだい２", "もんだい３", "もんだい４"];
+
+  const s1 = buildSheet({ title: "なかまはずれさがし", subtitle: "1つだけちがうものに、まるをつけてね", showNameDate: true, answerPage: false });
+  const svg1 = makeSvg(s1.contentW, s1.contentH);
+  layoutOddBoxes(svg1, puzzles, labels, s1.contentW, s1.contentH, false);
+  s1.holder.appendChild(svg1);
+  printArea.appendChild(s1.sheet);
+
+  if (includeAnswer) {
+    const s2 = buildSheet({ title: "なかまはずれさがし", showNameDate: false, answerPage: true });
+    const svg2 = makeSvg(s2.contentW, s2.contentH);
+    layoutOddBoxes(svg2, puzzles, labels, s2.contentW, s2.contentH, true);
+    s2.holder.appendChild(svg2);
+    printArea.appendChild(s2.sheet);
+  }
+}
+function layoutOddBoxes(svg, puzzles, labels, w, h, showAnswer) {
+  const boxW = (w - 8) / 2, boxH = (h - 8) / 2;
+  const positions = [[0, 0], [boxW + 8, 0], [0, boxH + 8], [boxW + 8, boxH + 8]];
+  positions.forEach(([bx, by], i) => drawOddBox(svg, puzzles[i], bx, by, boxW, boxH, labels[i], showAnswer));
+}
+
+/* ============================================================
+   5. まちがいさがし
+   ============================================================ */
+
+const DIFF_DIFFICULTY = {
+  "やさしい": { n: 9, k: 3 },
+  "ふつう": { n: 13, k: 5 },
+  "むずかしい": { n: 17, k: 7 },
+};
+
+function scatterPositions(n, w, h, rng) {
+  const cols = Math.max(1, Math.ceil(Math.sqrt((n * w) / h)));
+  const rows = Math.max(1, Math.ceil(n / cols));
+  const cellW = w / cols, cellH = h / rows;
+  const cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push([c, r]);
+  rng.shuffle(cells);
+  const chosen = cells.slice(0, n);
+  const jx = cellW * 0.28, jy = cellH * 0.28;
+  const positions = chosen.map(([c, r]) => [
+    cellW * (c + 0.5) + (rng.random() * 2 - 1) * jx,
+    cellH * (r + 0.5) + (rng.random() * 2 - 1) * jy,
+  ]);
+  return { positions, cellMin: Math.min(cellW, cellH) };
+}
+
+function generateSpotDiff(difficulty, panelW, panelH, rng) {
+  const settings = DIFF_DIFFICULTY[difficulty] ?? DIFF_DIFFICULTY["ふつう"];
+  const n = settings.n, k = settings.k;
+  const { positions, cellMin } = scatterPositions(n, panelW, panelH, rng);
+  const baseSize = Math.max(9, Math.min(16, cellMin * 0.55));
+
+  const elements = positions.map((pos) => {
+    const kind = rng.choice(SHAPE_KINDS);
+    const colorName = rng.choice(COLOR_NAMES);
+    return { kind, color: COLORS[colorName], colorName, size: baseSize, pos, diff: null };
+  });
+
+  const diffIndices = new Set(rng.sample([...Array(n).keys()], k));
+  diffIndices.forEach((idx) => {
+    const el = elements[idx];
+    const mode = rng.choice(["color", "size", "remove"]);
+    if (mode === "color") {
+      const otherName = rng.choice(COLOR_NAMES.filter((c) => c !== el.colorName));
+      el.diff = ["color", COLORS[otherName]];
+    } else if (mode === "size") {
+      const factor = rng.choice([0.6, 1.5]);
+      el.diff = ["size", el.size * factor];
+    } else {
+      el.diff = ["remove", null];
+    }
+  });
+
+  return { elements, diffIndices, n, k };
+}
+
+function drawDiffPanel(svg, data, ox, oy, w, h, variant, showAnswer) {
+  svg.appendChild(svgEl("rect", { x: ox, y: oy, width: w, height: h, fill: "none", stroke: "#3c3c3c", "stroke-width": 0.6 }));
+  data.elements.forEach((el, idx) => {
+    const cx = ox + el.pos[0], cy = oy + el.pos[1];
+    let kind = el.kind, color = el.color, size = el.size;
+    const isDiff = data.diffIndices.has(idx);
+
+    if (variant === "B" && isDiff) {
+      const [dtype, dval] = el.diff;
+      if (dtype === "remove") {
+        if (showAnswer) markCircle(svg, cx, cy, size);
+        return;
+      }
+      if (dtype === "color") color = dval;
+      else if (dtype === "size") size = dval;
+    }
+    drawShape(svg, kind, cx, cy, size, color);
+    if (variant === "B" && isDiff && showAnswer) markCircle(svg, cx, cy, Math.max(size, el.size));
+  });
+}
+
+function renderDiffSheets(printArea, difficulty, rng, includeAnswer) {
+  const s1 = buildSheet({ title: "まちがいさがし", subtitle: "上と下の絵を見くらべて、ちがうところをさがしてね", showNameDate: true, answerPage: false });
+  const panelH = (s1.contentH - 28) / 2;
+  const data = generateSpotDiff(difficulty, s1.contentW, panelH, rng);
+
+  const svg1 = makeSvg(s1.contentW, s1.contentH);
+  addPanelLabel(svg1, 0, 6, "うえの絵");
+  drawDiffPanel(svg1, data, 0, 8, s1.contentW, panelH, "A", false);
+  const y2 = 8 + panelH + 10;
+  addPanelLabel(svg1, 0, y2 - 2, "したの絵");
+  drawDiffPanel(svg1, data, 0, y2, s1.contentW, panelH, "B", false);
+  svg1.appendChild(svgText(s1.contentW / 2, y2 + panelH + 8, `ちがいは ぜんぶで ${data.k}こ あります`, { "font-size": 4.2, "text-anchor": "middle" }));
+  s1.holder.appendChild(svg1);
+  printArea.appendChild(s1.sheet);
+
+  if (includeAnswer) {
+    const s2 = buildSheet({ title: "まちがいさがし", showNameDate: false, answerPage: true });
+    const panelH2 = (s2.contentH - 20) / 2;
+    const svg2 = makeSvg(s2.contentW, s2.contentH);
+    addPanelLabel(svg2, 0, 6, "うえの絵");
+    drawDiffPanel(svg2, data, 0, 8, s2.contentW, panelH2, "A", false);
+    const y2b = 8 + panelH2 + 10;
+    addPanelLabel(svg2, 0, y2b - 2, "したの絵（こたえ）");
+    drawDiffPanel(svg2, data, 0, y2b, s2.contentW, panelH2, "B", true);
+    s2.holder.appendChild(svg2);
+    printArea.appendChild(s2.sheet);
+  }
+}
+function addPanelLabel(svg, x, y, text) {
+  svg.appendChild(svgText(x, y, text, { "font-size": 5.5, "font-weight": "bold" }));
+}
+
+/* ============================================================
+   6. UI配線
+   ============================================================ */
+
+const DIFFICULTIES = ["やさしい", "ふつう", "むずかしい"];
+let currentDifficulty = "ふつう";
+
+function initDifficultyButtons() {
+  const row = document.getElementById("diffRow");
+  DIFFICULTIES.forEach((level) => {
+    const b = document.createElement("button");
+    b.className = "diff-btn" + (level === currentDifficulty ? " active" : "");
+    b.textContent = level;
+    b.addEventListener("click", () => {
+      currentDifficulty = level;
+      row.querySelectorAll(".diff-btn").forEach((el) => el.classList.remove("active"));
+      b.classList.add("active");
+    });
+    row.appendChild(b);
+  });
+}
+
+function setStatus(msg) { document.getElementById("status").textContent = msg; }
+
+function generateAndPrint(kind) {
+  const includeAnswer = document.getElementById("answerCheck").checked;
+  const printArea = document.getElementById("printArea");
+  printArea.innerHTML = "";
+  const rng = new RNG();
+
+  const labels = { all: "今日の脳トレ", maze: "めいろ", odd: "なかまはずれさがし", diff: "まちがいさがし" };
+  setStatus("作成中です。少々お待ちください…");
+
+  try {
+    if (kind === "all" || kind === "maze") renderMazeSheets(printArea, currentDifficulty, rng, includeAnswer);
+    if (kind === "all" || kind === "odd") renderOddSheets(printArea, currentDifficulty, rng, includeAnswer);
+    if (kind === "all" || kind === "diff") renderDiffSheets(printArea, currentDifficulty, rng, includeAnswer);
+
+    setStatus(`「${labels[kind]}」を作成しました。まもなく印刷画面が開きます。\n開かない場合は Ctrl+P（Macは ⌘+P）を押してください。`);
+    setTimeout(() => window.print(), 150);
+  } catch (e) {
+    console.error(e);
+    setStatus("作成中にエラーが発生しました。もう一度お試しください。");
+    alert("教材の作成中にエラーが発生しました。\n\n詳細: " + e);
+  }
+}
+
+document.getElementById("btnAll").addEventListener("click", () => generateAndPrint("all"));
+document.getElementById("btnMaze").addEventListener("click", () => generateAndPrint("maze"));
+document.getElementById("btnOdd").addEventListener("click", () => generateAndPrint("odd"));
+document.getElementById("btnDiff").addEventListener("click", () => generateAndPrint("diff"));
+
+initDifficultyButtons();
+</script>
+</body>
+</html>
