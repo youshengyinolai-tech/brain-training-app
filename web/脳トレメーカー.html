@@ -515,6 +515,128 @@ const DIFF_DIFFICULTY = {
   "むずかしい": { n: 17, k: 7 },
 };
 
+/*
+ * 市販教材に近いイラスト版。
+ * base は必ず元絵、edited は最大7か所を変更した絵にする。
+ * 表示時は edited 全体を使わず、diffs で指定した範囲だけを base に重ねる。
+ * これにより指定範囲外の画素は左右で完全に同一になる。
+ * x/y/w/h は元画像に対する0〜1の比率。配列順が難易度を兼ねる。
+ */
+const ILLUSTRATED_DIFF_PUZZLES = [
+  {
+    id: "bakery-001",
+    title: "パン屋さん",
+    base: "assets/spot-diff/bakery/base.webp",
+    edited: "assets/spot-diff/bakery/edited.webp",
+    diffs: [
+      { x: 0.894, y: 0.035, w: 0.092, h: 0.145 }, // 棚の鳥
+      { x: 0.455, y: 0.270, w: 0.145, h: 0.285 }, // バゲット
+      { x: 0.535, y: 0.035, w: 0.105, h: 0.155 }, // 時計
+      { x: 0.475, y: 0.175, w: 0.105, h: 0.135 }, // 額の中
+      { x: 0.315, y: 0.175, w: 0.150, h: 0.245 }, // 花束
+      { x: 0.000, y: 0.075, w: 0.315, h: 0.310 }, // 窓の外
+      { x: 0.000, y: 0.825, w: 0.190, h: 0.175 }, // 左下の鉢植え
+    ],
+  },
+  {
+    id: "park-001",
+    title: "春の公園",
+    base: "assets/spot-diff/park/base.webp",
+    edited: "assets/spot-diff/park/edited.webp",
+    diffs: [
+      { x: 0.020, y: 0.535, w: 0.245, h: 0.200 }, // ベンチの帽子
+      { x: 0.605, y: 0.820, w: 0.195, h: 0.180 }, // じょうろ
+      { x: 0.770, y: 0.125, w: 0.115, h: 0.135 }, // 空を飛ぶ鳥
+      { x: 0.395, y: 0.665, w: 0.100, h: 0.195 }, // 犬のバンダナ
+      { x: 0.895, y: 0.440, w: 0.100, h: 0.115 }, // 池のカモ
+      { x: 0.480, y: 0.015, w: 0.055, h: 0.125 }, // 街灯の上部
+      { x: 0.485, y: 0.505, w: 0.100, h: 0.145 }, // 道の上を飛ぶ鳥
+    ],
+  },
+  {
+    id: "kitchen-001",
+    title: "お昼ごはんの支度",
+    base: "assets/spot-diff/kitchen/base.webp",
+    edited: "assets/spot-diff/kitchen/edited.webp",
+    diffs: [
+      { x: 0.815, y: 0.020, w: 0.120, h: 0.160 }, // 壁の時計
+      { x: 0.315, y: 0.390, w: 0.170, h: 0.185 }, // コンロの鍋とやかん
+      { x: 0.885, y: 0.815, w: 0.110, h: 0.180 }, // 果物かごのバナナ
+      { x: 0.500, y: 0.055, w: 0.125, h: 0.135 }, // 冷蔵庫の上の鉢植え
+      { x: 0.095, y: 0.750, w: 0.145, h: 0.155 }, // 野菜トレー
+      { x: 0.515, y: 0.270, w: 0.070, h: 0.085 }, // 魚のマグネット
+      { x: 0.140, y: 0.225, w: 0.090, h: 0.175 }, // 窓横の鍋つかみ
+    ],
+  },
+];
+
+function difficultyDiffCount(difficulty) {
+  return DIFF_DIFFICULTY[difficulty]?.k ?? 5;
+}
+
+function preloadUrls(urls) {
+  return Promise.all(urls.map((url) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(url);
+    img.onerror = () => reject(new Error(`画像を読み込めませんでした: ${url}`));
+    img.src = url;
+  })));
+}
+
+function dayOfYear(date = new Date()) {
+  const start = new Date(date.getFullYear(), 0, 0);
+  return Math.floor((date - start) / 86400000);
+}
+
+let illustratedPuzzleCursor = dayOfYear() - 1;
+function takeNextIllustratedPuzzle() {
+  const puzzle = ILLUSTRATED_DIFF_PUZZLES[illustratedPuzzleCursor % ILLUSTRATED_DIFF_PUZZLES.length];
+  illustratedPuzzleCursor = (illustratedPuzzleCursor + 1) % ILLUSTRATED_DIFF_PUZZLES.length;
+  return puzzle;
+}
+
+function upcomingIllustratedPuzzles(selected, count = 2) {
+  const start = ILLUSTRATED_DIFF_PUZZLES.indexOf(selected);
+  return Array.from({ length: Math.min(count, ILLUSTRATED_DIFF_PUZZLES.length - 1) }, (_, i) =>
+    ILLUSTRATED_DIFF_PUZZLES[(start + i + 1) % ILLUSTRATED_DIFF_PUZZLES.length]);
+}
+
+function drawIllustratedDiffPanel(svg, puzzle, ox, oy, w, h, variant, showAnswer, count) {
+  const clipIdPrefix = `${puzzle.id}-${variant}-${Math.random().toString(36).slice(2)}`;
+  const defs = svgEl("defs");
+  svg.appendChild(defs);
+  svg.appendChild(svgEl("rect", { x: ox, y: oy, width: w, height: h, rx: 2.5, fill: "#fff", stroke: "#222", "stroke-width": 0.7 }));
+  svg.appendChild(svgEl("image", {
+    href: puzzle.base, x: ox, y: oy, width: w, height: h,
+    preserveAspectRatio: "none",
+  }));
+
+  if (variant === "B") {
+    puzzle.diffs.slice(0, count).forEach((diff, index) => {
+      const clipId = `${clipIdPrefix}-${index}`;
+      const clip = svgEl("clipPath", { id: clipId });
+      clip.appendChild(svgEl("rect", {
+        x: ox + diff.x * w, y: oy + diff.y * h,
+        width: diff.w * w, height: diff.h * h,
+      }));
+      defs.appendChild(clip);
+      svg.appendChild(svgEl("image", {
+        href: puzzle.edited, x: ox, y: oy, width: w, height: h,
+        preserveAspectRatio: "none", "clip-path": `url(#${clipId})`,
+      }));
+      if (showAnswer) {
+        const cx = ox + (diff.x + diff.w / 2) * w;
+        const cy = oy + (diff.y + diff.h / 2) * h;
+        const rx = Math.max(5, diff.w * w * 0.58);
+        const ry = Math.max(5, diff.h * h * 0.58);
+        svg.appendChild(svgEl("ellipse", {
+          cx, cy, rx, ry, fill: "none", stroke: "#d92828", "stroke-width": 1.2,
+        }));
+      }
+    });
+  }
+}
+
 function scatterPositions(n, w, h, rng) {
   const cols = Math.max(1, Math.ceil(Math.sqrt((n * w) / h)));
   const rows = Math.max(1, Math.ceil(n / cols));
@@ -582,7 +704,11 @@ function drawDiffPanel(svg, data, ox, oy, w, h, variant, showAnswer) {
   });
 }
 
-function renderDiffSheets(printArea, difficulty, rng, includeAnswer) {
+function renderDiffSheets(printArea, difficulty, rng, includeAnswer, illustratedOverride = null) {
+  const illustrated = illustratedOverride ?? ILLUSTRATED_DIFF_PUZZLES[rng.randint(0, ILLUSTRATED_DIFF_PUZZLES.length - 1)];
+  if (illustrated) {
+    return renderIllustratedDiffSheets(printArea, difficulty, illustrated, includeAnswer);
+  }
   const s1 = buildSheet({ title: "まちがいさがし", subtitle: "上と下の絵を見くらべて、ちがうところをさがしてね", showNameDate: true, answerPage: false });
   const panelH = (s1.contentH - 28) / 2;
   const data = generateSpotDiff(difficulty, s1.contentW, panelH, rng);
@@ -606,6 +732,35 @@ function renderDiffSheets(printArea, difficulty, rng, includeAnswer) {
     const y2b = 8 + panelH2 + 10;
     addPanelLabel(svg2, 0, y2b - 2, "したの絵（こたえ）");
     drawDiffPanel(svg2, data, 0, y2b, s2.contentW, panelH2, "B", true);
+    s2.holder.appendChild(svg2);
+    printArea.appendChild(s2.sheet);
+  }
+}
+
+function renderIllustratedDiffSheets(printArea, difficulty, puzzle, includeAnswer) {
+  const count = difficultyDiffCount(difficulty);
+  const subtitle = `上と下の絵を見くらべて、${count}このちがいをさがしてね`;
+  const s1 = buildSheet({ title: `まちがいさがし「${puzzle.title}」`, subtitle, showNameDate: true, answerPage: false });
+  const panelH = (s1.contentH - 28) / 2;
+  const svg1 = makeSvg(s1.contentW, s1.contentH);
+  addPanelLabel(svg1, 0, 6, "うえの絵");
+  drawIllustratedDiffPanel(svg1, puzzle, 0, 8, s1.contentW, panelH, "A", false, count);
+  const y2 = 8 + panelH + 10;
+  addPanelLabel(svg1, 0, y2 - 2, "したの絵");
+  drawIllustratedDiffPanel(svg1, puzzle, 0, y2, s1.contentW, panelH, "B", false, count);
+  svg1.appendChild(svgText(s1.contentW / 2, y2 + panelH + 8, `ちがいは ぜんぶで ${count}こ あります`, { "font-size": 4.2, "text-anchor": "middle" }));
+  s1.holder.appendChild(svg1);
+  printArea.appendChild(s1.sheet);
+
+  if (includeAnswer) {
+    const s2 = buildSheet({ title: `まちがいさがし「${puzzle.title}」`, showNameDate: false, answerPage: true });
+    const panelH2 = (s2.contentH - 20) / 2;
+    const svg2 = makeSvg(s2.contentW, s2.contentH);
+    addPanelLabel(svg2, 0, 6, "うえの絵");
+    drawIllustratedDiffPanel(svg2, puzzle, 0, 8, s2.contentW, panelH2, "A", false, count);
+    const y2b = 8 + panelH2 + 10;
+    addPanelLabel(svg2, 0, y2b - 2, "したの絵（こたえ）");
+    drawIllustratedDiffPanel(svg2, puzzle, 0, y2b, s2.contentW, panelH2, "B", true, count);
     s2.holder.appendChild(svg2);
     printArea.appendChild(s2.sheet);
   }
@@ -638,7 +793,7 @@ function initDifficultyButtons() {
 
 function setStatus(msg) { document.getElementById("status").textContent = msg; }
 
-function generateAndPrint(kind) {
+async function generateAndPrint(kind) {
   const includeAnswer = document.getElementById("answerCheck").checked;
   const printArea = document.getElementById("printArea");
   printArea.innerHTML = "";
@@ -648,9 +803,16 @@ function generateAndPrint(kind) {
   setStatus("作成中です。少々お待ちください…");
 
   try {
+    let illustrated = null;
+    if (kind === "all" || kind === "diff") {
+      illustrated = takeNextIllustratedPuzzle();
+      await preloadUrls([illustrated.base, illustrated.edited]);
+      const upcoming = upcomingIllustratedPuzzles(illustrated);
+      setTimeout(() => preloadUrls(upcoming.flatMap((p) => [p.base, p.edited])).catch(console.warn), 0);
+    }
     if (kind === "all" || kind === "maze") renderMazeSheets(printArea, currentDifficulty, rng, includeAnswer);
     if (kind === "all" || kind === "odd") renderOddSheets(printArea, currentDifficulty, rng, includeAnswer);
-    if (kind === "all" || kind === "diff") renderDiffSheets(printArea, currentDifficulty, rng, includeAnswer);
+    if (kind === "all" || kind === "diff") renderDiffSheets(printArea, currentDifficulty, rng, includeAnswer, illustrated);
 
     setStatus(`「${labels[kind]}」を作成しました。まもなく印刷画面が開きます。\n開かない場合は Ctrl+P（Macは ⌘+P）を押してください。`);
     setTimeout(() => window.print(), 150);
@@ -667,6 +829,9 @@ document.getElementById("btnOdd").addEventListener("click", () => generateAndPri
 document.getElementById("btnDiff").addEventListener("click", () => generateAndPrint("diff"));
 
 initDifficultyButtons();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js").catch((error) => console.warn("画像キャッシュを開始できませんでした", error));
+}
 </script>
 </body>
 </html>
