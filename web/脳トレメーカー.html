@@ -914,6 +914,76 @@ ILLUSTRATED_DIFF_PUZZLES.forEach((puzzle) => {
   };
 });
 
+const COMPACT_DIFF_PUZZLES = [
+  { id: "seaside-001", title: "海辺の散歩道", dir: "seaside", diffs: [
+    { x:.855,y:.045,w:.105,h:.140 }, { x:.690,y:.165,w:.300,h:.135 }, { x:.155,y:.465,w:.115,h:.155 },
+    { x:.025,y:.330,w:.105,h:.155 }, { x:.775,y:.385,w:.105,h:.160 }, { x:.680,y:.545,w:.135,h:.330 },
+    { x:.815,y:.575,w:.175,h:.315 },
+  ]},
+  { id: "classroom-001", title: "地域の学習教室", dir: "classroom", diffs: [
+    { x:.285,y:.020,w:.105,h:.140 }, { x:.225,y:.145,w:.110,h:.165 }, { x:.755,y:.065,w:.125,h:.150 },
+    { x:.375,y:.555,w:.170,h:.300 }, { x:.180,y:.780,w:.165,h:.160 }, { x:.850,y:.515,w:.120,h:.300 },
+    { x:.730,y:.685,w:.115,h:.260 },
+  ]},
+  { id: "flower-shop-001", title: "町のお花屋さん", dir: "flower-shop", diffs: [
+    { x:.425,y:.040,w:.115,h:.150 }, { x:.000,y:.010,w:.375,h:.200 }, { x:.025,y:.475,w:.125,h:.170 },
+    { x:.425,y:.220,w:.180,h:.310 }, { x:.825,y:.245,w:.150,h:.180 }, { x:.730,y:.565,w:.140,h:.330 },
+    { x:.635,y:.690,w:.150,h:.290 },
+  ]},
+  { id: "laundromat-001", title: "コインランドリー", dir: "laundromat", diffs: [
+    { x:.735,y:.030,w:.105,h:.145 }, { x:.430,y:.010,w:.150,h:.155 }, { x:.035,y:.035,w:.130,h:.205 },
+    { x:.365,y:.515,w:.225,h:.205 }, { x:.585,y:.535,w:.120,h:.230 }, { x:.320,y:.710,w:.195,h:.160 },
+    { x:.005,y:.710,w:.120,h:.260 },
+  ]},
+  { id: "cafe-001", title: "午後の喫茶店", dir: "cafe", diffs: [
+    { x:.670,y:.035,w:.125,h:.165 }, { x:.410,y:.010,w:.145,h:.205 }, { x:.370,y:.465,w:.115,h:.150 },
+    { x:.440,y:.470,w:.120,h:.140 }, { x:.825,y:.155,w:.135,h:.285 }, { x:.885,y:.500,w:.110,h:.345 },
+    { x:.055,y:.665,w:.145,h:.310 },
+  ]},
+  { id: "shrine-001", title: "神社のお参り", dir: "shrine", diffs: [
+    { x:.295,y:.190,w:.090,h:.115 }, { x:.015,y:.175,w:.190,h:.460 }, { x:.555,y:.135,w:.095,h:.165 },
+    { x:.570,y:.535,w:.300,h:.250 }, { x:.295,y:.305,w:.230,h:.280 }, { x:.705,y:.655,w:.225,h:.320 },
+    { x:.495,y:.690,w:.155,h:.240 },
+  ]},
+];
+
+function centeredDiffScale(diff, scale) {
+  return {
+    x: diff.x + diff.w * (1 - scale) / 2,
+    y: diff.y + diff.h * (1 - scale) / 2,
+    w: diff.w * scale,
+    h: diff.h * scale,
+  };
+}
+
+COMPACT_DIFF_PUZZLES.forEach(({ id, title, dir, diffs }) => {
+  const image = `assets/spot-diff/${dir}/edited.webp`;
+  ILLUSTRATED_DIFF_PUZZLES.push({
+    id, title, base: `assets/spot-diff/${dir}/base.webp`, edited: image, diffs,
+    variants: {
+      "やさしい": { image, diffs },
+      "ふつう": { image, diffs: diffs.map((diff) => centeredDiffScale(diff, 0.72)) },
+      "むずかしい": { image, diffs: diffs.map((diff) => centeredDiffScale(diff, 0.48)) },
+    },
+  });
+});
+
+/*
+ * 1年分の出題カタログ。画像自体は共用し、日ごとのIDと左右反転で
+ * 365問へ展開するため、通信量と初回表示時間を増やさない。
+ */
+const ILLUSTRATED_DAILY_PUZZLES = Array.from({ length: 365 }, (_, index) => {
+  const sourceIndex = (index * 7 + Math.floor(index / ILLUSTRATED_DIFF_PUZZLES.length) * 3)
+    % ILLUSTRATED_DIFF_PUZZLES.length;
+  const source = ILLUSTRATED_DIFF_PUZZLES[sourceIndex];
+  return {
+    ...source,
+    id: `daily-${String(index + 1).padStart(3, "0")}-${source.id}`,
+    title: `${source.title}（${index + 1}日目）`,
+    mirror: Math.floor(index / ILLUSTRATED_DIFF_PUZZLES.length) % 2 === 1,
+  };
+});
+
 function difficultyDiffCount(difficulty) {
   return 7;
 }
@@ -934,15 +1004,15 @@ function dayOfYear(date = new Date()) {
 
 let illustratedPuzzleCursor = dayOfYear() - 1;
 function takeNextIllustratedPuzzle() {
-  const puzzle = ILLUSTRATED_DIFF_PUZZLES[illustratedPuzzleCursor % ILLUSTRATED_DIFF_PUZZLES.length];
-  illustratedPuzzleCursor = (illustratedPuzzleCursor + 1) % ILLUSTRATED_DIFF_PUZZLES.length;
+  const puzzle = ILLUSTRATED_DAILY_PUZZLES[illustratedPuzzleCursor % ILLUSTRATED_DAILY_PUZZLES.length];
+  illustratedPuzzleCursor = (illustratedPuzzleCursor + 1) % ILLUSTRATED_DAILY_PUZZLES.length;
   return puzzle;
 }
 
 function upcomingIllustratedPuzzles(selected, count = 2) {
-  const start = ILLUSTRATED_DIFF_PUZZLES.indexOf(selected);
-  return Array.from({ length: Math.min(count, ILLUSTRATED_DIFF_PUZZLES.length - 1) }, (_, i) =>
-    ILLUSTRATED_DIFF_PUZZLES[(start + i + 1) % ILLUSTRATED_DIFF_PUZZLES.length]);
+  const start = ILLUSTRATED_DAILY_PUZZLES.indexOf(selected);
+  return Array.from({ length: Math.min(count, ILLUSTRATED_DAILY_PUZZLES.length - 1) }, (_, i) =>
+    ILLUSTRATED_DAILY_PUZZLES[(start + i + 1) % ILLUSTRATED_DAILY_PUZZLES.length]);
 }
 
 function drawIllustratedDiffPanel(svg, puzzle, variantData, ox, oy, w, h, side, showAnswer) {
@@ -950,13 +1020,17 @@ function drawIllustratedDiffPanel(svg, puzzle, variantData, ox, oy, w, h, side, 
   const defs = svgEl("defs");
   svg.appendChild(defs);
   svg.appendChild(svgEl("rect", { x: ox, y: oy, width: w, height: h, rx: 2.5, fill: "#fff", stroke: "#222", "stroke-width": 0.7 }));
+  const imageTransform = puzzle.mirror ? `translate(${2 * ox + w} 0) scale(-1 1)` : undefined;
   svg.appendChild(svgEl("image", {
     href: puzzle.base, x: ox, y: oy, width: w, height: h,
-    preserveAspectRatio: "none",
+    preserveAspectRatio: "none", ...(imageTransform ? { transform: imageTransform } : {}),
   }));
 
   if (side === "B") {
-    variantData.diffs.forEach((diff, index) => {
+    variantData.diffs.forEach((originalDiff, index) => {
+      const diff = puzzle.mirror
+        ? { ...originalDiff, x: 1 - originalDiff.x - originalDiff.w }
+        : originalDiff;
       const clipId = `${clipIdPrefix}-${index}`;
       const clip = svgEl("clipPath", { id: clipId });
       clip.appendChild(svgEl("rect", {
@@ -966,7 +1040,8 @@ function drawIllustratedDiffPanel(svg, puzzle, variantData, ox, oy, w, h, side, 
       defs.appendChild(clip);
       svg.appendChild(svgEl("image", {
         href: variantData.image, x: ox, y: oy, width: w, height: h,
-        preserveAspectRatio: "none", "clip-path": `url(#${clipId})`,
+        preserveAspectRatio: "none", ...(imageTransform ? { transform: imageTransform } : {}),
+        "clip-path": `url(#${clipId})`,
       }));
       if (showAnswer) {
         const cx = ox + (diff.x + diff.w / 2) * w;
@@ -1049,7 +1124,7 @@ function drawDiffPanel(svg, data, ox, oy, w, h, variant, showAnswer) {
 }
 
 function renderDiffSheets(printArea, difficulty, rng, includeAnswer, illustratedOverride = null) {
-  const illustrated = illustratedOverride ?? ILLUSTRATED_DIFF_PUZZLES[rng.randint(0, ILLUSTRATED_DIFF_PUZZLES.length - 1)];
+  const illustrated = illustratedOverride ?? ILLUSTRATED_DAILY_PUZZLES[rng.randint(0, ILLUSTRATED_DAILY_PUZZLES.length - 1)];
   if (illustrated) {
     return renderIllustratedDiffSheets(printArea, difficulty, illustrated, includeAnswer);
   }

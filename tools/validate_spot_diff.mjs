@@ -19,8 +19,31 @@ function sourceBetween(start, end) {
 
 const puzzleSource = sourceBetween("const ILLUSTRATED_DIFF_PUZZLES =", ";\n\nconst ILLUSTRATED_VARIANTS");
 const variantSource = sourceBetween("const ILLUSTRATED_VARIANTS =", ";\n\nILLUSTRATED_DIFF_PUZZLES.forEach");
+const compactSource = sourceBetween("const COMPACT_DIFF_PUZZLES =", ";\n\nfunction centeredDiffScale");
 const context = {};
-vm.runInNewContext(`puzzles = ${puzzleSource}; variants = ${variantSource};`, context);
+vm.runInNewContext(`puzzles = ${puzzleSource}; variants = ${variantSource}; compact = ${compactSource};`, context);
+
+context.compact.forEach(({ id, title, dir, diffs }) => {
+  const image = `assets/spot-diff/${dir}/edited.webp`;
+  const scaled = (scale) => diffs.map((d) => ({
+    x: d.x + d.w * (1 - scale) / 2, y: d.y + d.h * (1 - scale) / 2,
+    w: d.w * scale, h: d.h * scale,
+  }));
+  context.puzzles.push({ id, title, base: `assets/spot-diff/${dir}/base.webp`, edited: image, diffs });
+  context.variants[id] = {
+    "ふつう": { image, diffs: scaled(0.72) },
+    "むずかしい": { image, diffs: scaled(0.48) },
+  };
+});
+
+const dailyCatalog = Array.from({ length: 365 }, (_, index) => {
+  const sourceIndex = (index * 7 + Math.floor(index / context.puzzles.length) * 3) % context.puzzles.length;
+  return `daily-${String(index + 1).padStart(3, "0")}-${context.puzzles[sourceIndex].id}`;
+});
+if (dailyCatalog.length !== 365 || new Set(dailyCatalog).size !== 365) {
+  throw new Error("365日分の出題カタログが一意に生成されていません");
+}
+console.log(`OK daily-catalog: ${dailyCatalog.length}問`);
 
 const work = mkdtempSync(join(tmpdir(), "spot-diff-validate-"));
 let failed = false;
